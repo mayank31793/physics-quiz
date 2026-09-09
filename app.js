@@ -227,13 +227,31 @@ function buildAdminToolbar(card, q) {
   editBtn.addEventListener("click", () => enterEditMode(card, q));
   bar.appendChild(editBtn);
 
+  const imgBtn = document.createElement("button");
+  imgBtn.type = "button";
+  imgBtn.className = "admin-btn";
+  imgBtn.textContent = q.has_diagram ? "📷 Replace image" : "📷 Add image";
+  imgBtn.addEventListener("click", () => startImageReplace(card, q));
+  bar.appendChild(imgBtn);
+
   if (q.has_diagram) {
-    const imgBtn = document.createElement("button");
-    imgBtn.type = "button";
-    imgBtn.className = "admin-btn";
-    imgBtn.textContent = "📷 Upload image";
-    imgBtn.addEventListener("click", () => startImageReplace(card, q));
-    bar.appendChild(imgBtn);
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "admin-btn";
+    delBtn.textContent = "🗑 Delete image";
+    delBtn.addEventListener("click", async () => {
+      if (!window.confirm("Delete the diagram for this question?")) return;
+      delBtn.disabled = true;
+      try {
+        const updated = await adminFetch("delete_diagram", { question_id: q.id });
+        replaceCard(card, updated);
+      } catch (err) {
+        console.error("delete_diagram failed:", err);
+        window.alert(err.message);
+        delBtn.disabled = false;
+      }
+    });
+    bar.appendChild(delBtn);
   }
 
   return bar;
@@ -457,10 +475,11 @@ async function startImageReplace(card, q) {
     imageDialogError.hidden = true;
     imageCandidatesEl.innerHTML = "";
 
-    // Reference: the current diagram
-    imageCandidatesEl.appendChild(
-      candidateTile("Current", q.images && q.images[0] ? q.images[0].url : "", null),
-    );
+    // Reference: the current diagram (may be none)
+    const hasCurrent = !!(q.images && q.images[0] && q.images[0].url);
+    const currentTile = candidateTile(hasCurrent ? "Current" : "Current (none)", hasCurrent ? q.images[0].url : "", null);
+    if (!hasCurrent) currentTile.querySelector(".candidate-preview").textContent = "No image yet";
+    imageCandidatesEl.appendChild(currentTile);
 
     // Candidate B: raster wrapped in an <svg>
     const rasterSvg =

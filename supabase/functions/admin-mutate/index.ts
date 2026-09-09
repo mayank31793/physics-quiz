@@ -184,6 +184,17 @@ Deno.serve(async (req) => {
         break
       }
 
+      case 'delete_diagram': {
+        const { data, error } = await supabase
+          .from('images').delete().eq('question_id', question_id).select('id')
+        if (error) return json({ error: error.message }, 500)
+        rowsAffected = data?.length ?? 0
+        const { error: flagErr } = await supabase
+          .from('questions').update({ has_diagram: false }).eq('id', question_id).select('id')
+        if (flagErr) return json({ error: flagErr.message }, 500)
+        break
+      }
+
       case 'replace_diagram': {
         const svg = typeof body.svg_data_uri === 'string' ? body.svg_data_uri : null
         const alt = typeof body.alt === 'string' ? body.alt : null
