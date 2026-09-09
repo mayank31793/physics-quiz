@@ -241,10 +241,17 @@ function buildAdminToolbar(card, q) {
 
 // ---- Admin: edit stem / options / correct answer ----
 async function enterEditMode(card, q) {
+  // Guard against double-clicks opening the panel more than once for the same card.
+  // Set synchronously, before any await. replaceCard() builds a fresh card so the
+  // flag resets on save/cancel; the error path below clears it explicitly.
+  if (card.dataset.editing === "1") return;
+  card.dataset.editing = "1";
+
   let full;
   try {
     full = await adminFetch("get_question", { question_id: q.id });
   } catch (err) {
+    card.dataset.editing = "";
     window.alert(err.message);
     return;
   }
