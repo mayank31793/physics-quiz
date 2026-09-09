@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Physics Practice — Electrostatics</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
+
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="page-header">
+    <div class="page-header-row">
+      <h1>Physics Practice</h1>
+      <button type="button" id="admin-toggle" class="admin-toggle">Admin</button>
+    </div>
+    <p class="meta" id="meta-line">Loading…</p>
+  </header>
+
+  <main id="question-list" class="question-list">
+    <p class="status" id="status">Fetching questions…</p>
+  </main>
+
+  <dialog id="image-dialog" class="image-dialog">
+    <form method="dialog" class="image-dialog-form">
+      <h2>Replace diagram</h2>
+      <p class="image-dialog-hint">Pick the version that best matches the original, then confirm.</p>
+      <div class="image-candidates" id="image-candidates"></div>
+      <p class="image-dialog-error" id="image-dialog-error" hidden></p>
+      <menu class="image-dialog-actions">
+        <button type="button" id="image-cancel" class="admin-btn">Cancel</button>
+        <button type="button" id="image-confirm" class="admin-btn admin-btn-primary" disabled>Confirm &amp; save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
