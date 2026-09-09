@@ -171,6 +171,19 @@ Deno.serve(async (req) => {
         break
       }
 
+      case 'update_difficulty': {
+        const difficulty = typeof body.difficulty === 'string' ? body.difficulty.toLowerCase() : null
+        if (!difficulty || !['easy', 'medium', 'hard'].includes(difficulty)) {
+          return json({ error: 'difficulty must be easy|medium|hard' }, 400)
+        }
+        const { data, error } = await supabase
+          .from('questions').update({ difficulty }).eq('id', question_id).select('id')
+        if (error) return json({ error: error.message }, 500)
+        rowsAffected = data?.length ?? 0
+        if (!rowsAffected) return json({ error: 'update matched no rows (RLS or bad question_id)' }, 409)
+        break
+      }
+
       case 'replace_diagram': {
         const svg = typeof body.svg_data_uri === 'string' ? body.svg_data_uri : null
         const alt = typeof body.alt === 'string' ? body.alt : null

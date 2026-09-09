@@ -176,6 +176,7 @@ function renderQuestionCard(q) {
   if (q.difficulty) {
     const tag = document.createElement("span");
     tag.className = "question-tag";
+    tag.dataset.level = String(q.difficulty).toLowerCase();
     tag.textContent = q.difficulty;
     head.appendChild(tag);
   }
@@ -286,6 +287,17 @@ async function enterEditMode(card, q) {
   });
   panel.appendChild(labelled("Options (select the correct one)", optWrap));
 
+  const diffSelect = document.createElement("select");
+  diffSelect.className = "edit-difficulty";
+  ["easy", "medium", "hard"].forEach((v) => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v[0].toUpperCase() + v.slice(1);
+    diffSelect.appendChild(o);
+  });
+  diffSelect.value = (full.difficulty && String(full.difficulty).toLowerCase()) || "medium";
+  panel.appendChild(labelled("Difficulty", diffSelect));
+
   const errEl = document.createElement("p");
   errEl.className = "edit-error";
   errEl.hidden = true;
@@ -334,6 +346,14 @@ async function enterEditMode(card, q) {
         latest = await adminFetch("update_correct", {
           question_id: q.id,
           correct_label: chosen.label,
+        });
+      }
+
+      const curDifficulty = full.difficulty && String(full.difficulty).toLowerCase();
+      if (diffSelect.value && diffSelect.value !== curDifficulty) {
+        latest = await adminFetch("update_difficulty", {
+          question_id: q.id,
+          difficulty: diffSelect.value,
         });
       }
 
