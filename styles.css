@@ -434,3 +434,231 @@ body {
   padding: 0;
   margin: 16px 0 0;
 }
+
+/* ---- PDF import ---- */
+.pdf-import {
+  max-width: 680px;
+  margin: 10px auto 0;
+  display: flex;
+  gap: 8px;
+}
+
+/* Only visible after the admin passphrase is accepted (pdf-import.js toggles [hidden]). */
+.pdf-import[hidden] { display: none; }
+
+.import-dialog {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 0;
+  width: min(920px, calc(100vw - 24px));
+  max-height: calc(100vh - 48px);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.import-dialog::backdrop { background: rgba(35, 39, 51, 0.4); }
+
+.import-dialog-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+}
+
+.import-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.import-head h2 {
+  font-family: 'IBM Plex Serif', Georgia, serif;
+  font-size: 18px;
+  margin: 0;
+}
+
+.import-hint { font-size: 12px; color: var(--ink-muted); margin: 0; }
+
+.import-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: end;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.import-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.import-form input,
+.import-form select {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  padding: 5px 7px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.import-paper-type {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 6px 10px 8px;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: center;
+}
+
+.import-paper-type legend {
+  font-size: 12px;
+  color: var(--ink-muted);
+  padding: 0 4px;
+}
+
+.import-paper-type label {
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.import-status { font-size: 13px; color: var(--ink-muted); margin: 0; min-height: 1.2em; }
+
+.import-review {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rev-q {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: #fff;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rev-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.rev-num {
+  font-family: 'IBM Plex Serif', Georgia, serif;
+  font-weight: 600;
+  padding: 2px 4px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.rev-diff,
+.rev-chapter {
+  font-size: 12px;
+  padding: 2px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.rev-chapter { max-width: 220px; }
+
+.rev-q.needs-verify {
+  border-color: #d99a2b;
+  box-shadow: inset 3px 0 0 #d99a2b;
+}
+
+.rev-answer-flag {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #fbeecc;
+  color: #8a5a12;
+  border: 1px solid #e6c983;
+}
+
+.rev-answer-flag.is-key {
+  background: #e4f0e2;
+  color: #2f6d3a;
+  border-color: #b7d9b3;
+}
+
+.rev-stem {
+  font-family: 'IBM Plex Serif', Georgia, serif;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 6px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.rev-opts { display: flex; flex-direction: column; gap: 5px; }
+
+.rev-opt-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+}
+
+.rev-opt-label {
+  font-family: 'IBM Plex Serif', Georgia, serif;
+  font-weight: 600;
+  color: var(--ink-muted);
+  min-width: 14px;
+}
+
+.rev-opt {
+  flex: 1;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.rev-fig {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.rev-fig img {
+  max-width: 260px;
+  max-height: 180px;
+  height: auto;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.import-foot {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--rule);
+  padding-top: 12px;
+}

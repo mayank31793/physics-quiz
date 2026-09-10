@@ -12,6 +12,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <link rel="stylesheet" href="styles.css" />
 </head>
@@ -42,6 +43,34 @@
     </form>
   </dialog>
 
+  <dialog id="import-dialog" class="import-dialog">
+    <div class="import-dialog-body">
+      <div class="import-head">
+        <h2>Import questions from PDF</h2>
+        <button type="button" id="import-close" class="admin-btn">Close</button>
+      </div>
+      <p class="import-hint">Reads a scanned question paper with Claude. Chapters are assigned per question in the review step. Nothing is saved until you click “Import selected”.</p>
+      <div class="import-form">
+        <fieldset class="import-paper-type" id="import-paper-type">
+          <legend>Question paper</legend>
+          <label><input type="radio" name="import-paper-type" value="JEE" /> JEE</label>
+          <label><input type="radio" name="import-paper-type" value="NEET" /> NEET</label>
+          <label><input type="radio" name="import-paper-type" value="BITS" /> BITS</label>
+          <label><input type="radio" name="import-paper-type" value="BOARDS" /> BOARDS</label>
+          <label><input type="radio" name="import-paper-type" value="Other" /> Other</label>
+        </fieldset>
+        <label>PDF file <input type="file" id="import-file" accept="application/pdf" /></label>
+        <button type="button" id="import-scan" class="admin-btn admin-btn-primary">Scan PDF</button>
+      </div>
+      <p class="import-status" id="import-status"></p>
+      <div class="import-review" id="import-review"></div>
+      <div class="import-foot" id="import-foot" hidden>
+        <button type="button" id="import-commit" class="admin-btn admin-btn-primary">Import selected</button>
+      </div>
+    </div>
+  </dialog>
+
   <script src="app.js"></script>
+  <script defer src="pdf-import.js"></script>
 </body>
 </html>
