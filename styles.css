@@ -79,6 +79,60 @@ body {
   margin: 0 auto;
 }
 
+.question-list.is-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.page-error {
+  color: var(--incorrect);
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 28px 0 0;
+}
+
+.pager-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pager-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.pager-btn.is-current {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  font-weight: 600;
+  cursor: default;
+}
+
+.pager-btn:disabled {
+  color: var(--ink-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pager-ellipsis {
+  color: var(--ink-muted);
+  padding: 0 2px;
+}
+
 .question {
   border-top: 1px solid var(--rule);
   padding: 28px 0;

@@ -3,14 +3,20 @@
 const FUNCTIONS_BASE = "https://nuiftmqtcqdcjytwowta.supabase.co/functions/v1";
 const ADMIN_FN = `${FUNCTIONS_BASE}/admin-mutate`;
 const EXERCISE = "Exercise-1"; // change this to load a different exercise later
+const PAGE_SIZE = 30;
 
 const listEl = document.getElementById("question-list");
-const statusEl = document.getElementById("status");
 const metaEl = document.getElementById("meta-line");
 const adminToggleEl = document.getElementById("admin-toggle");
 
-// Keep the loaded questions around so a single card can be re-rendered after an edit.
-const state = { questions: [] };
+// state.questions holds only the CURRENT page (server-paginated) — see loadQuestions/showPage.
+// A single card is still re-rendered in place after an edit via replaceCard().
+const state = { questions: [], total: 0, page: 1 };
+
+// Cache of already-fetched pages so Back/Forward and revisiting a page don't refetch.
+// Stores the exact array assigned to state.questions, so an in-place edit (replaceCard)
+// stays reflected if the user navigates away and back.
+const pageCache = new Map();
 
 // ---- Admin mode ----
 const ADMIN_KEY = "physicsQuizAdminSecret";
@@ -40,7 +46,7 @@ async function adminFetch(action, payload = {}) {
     admin.enabled = false;
     localStorage.removeItem(ADMIN_KEY);
     syncAdminToggle();
-    renderQuestions(state.questions);
+    renderCurrentPage();
     throw new Error("Admin passphrase rejected.");
   }
   if (!res.ok) {
@@ -63,14 +69,14 @@ adminToggleEl.addEventListener("click", async (e) => {
     admin.enabled = false;
     localStorage.removeItem(ADMIN_KEY);
     syncAdminToggle();
-    renderQuestions(state.questions);
+    renderCurrentPage();
     return;
   }
 
   if (admin.enabled) {
     admin.enabled = false;
     syncAdminToggle();
-    renderQuestions(state.questions);
+    renderCurrentPage();
     return;
   }
 
@@ -91,49 +97,190 @@ adminToggleEl.addEventListener("click", async (e) => {
     localStorage.setItem(ADMIN_KEY, admin.secret);
     admin.enabled = true;
     syncAdminToggle();
-    renderQuestions(state.questions);
+    renderCurrentPage();
   } catch (err) {
     admin.secret = "";
     window.alert(err.message);
   }
 });
 
-// ---- Fetch questions using plain fetch() ----
-async function loadQuestions() {
+// ---- Fetch one page of questions from the server (only PAGE_SIZE rows travel the wire) ----
+async function fetchPage(page) {
+  if (pageCache.has(page)) return pageCache.get(page);
+
+  const res = await fetch(
+    `${FUNCTIONS_BASE}/questions?exercise=${encodeURIComponent(EXERCISE)}&page=${page}&page_size=${PAGE_SIZE}`,
+  );
+  let body = null;
   try {
-    const res = await fetch(`${FUNCTIONS_BASE}/questions?exercise=${encodeURIComponent(EXERCISE)}`);
+    body = await res.json();
+  } catch {
+    /* fall through to the status check below */
+  }
+  if (!res.ok) throw new Error((body && body.error) || `Server responded with ${res.status}`);
+  if (!body || !Array.isArray(body.data)) throw new Error("Unexpected response shape from the server.");
 
-    if (!res.ok) {
-      throw new Error(`Server responded with ${res.status}`);
+  const entry = { data: body.data, total: body.total ?? body.data.length };
+  pageCache.set(page, entry);
+  return entry;
+}
+
+// Fetches and shows a page. Only touches state/URL on success, so a failed
+// page-switch leaves the currently-shown page intact instead of going blank.
+async function showPage(requestedPage, { pushUrl = false, replaceUrl = false } = {}) {
+  listEl.classList.add("is-loading");
+  try {
+    let page = requestedPage;
+    let entry = await fetchPage(page);
+
+    // The very first fetch is the only place we can't clamp against totalPages()
+    // beforehand (state.total isn't known yet) — so correct after the fact if the
+    // requested page (e.g. a stale/hand-edited ?page=99) turned out to be out of range.
+    const pages = Math.max(1, Math.ceil(entry.total / PAGE_SIZE));
+    let corrected = false;
+    if (page > pages) {
+      page = pages;
+      entry = await fetchPage(page);
+      corrected = true;
     }
 
-    const questions = await res.json();
-
-    if (!Array.isArray(questions) || questions.length === 0) {
-      statusEl.textContent = "No questions found for this exercise.";
-      return;
-    }
-
-    state.questions = questions;
-    renderQuestions(questions);
+    state.questions = entry.data;
+    state.total = entry.total;
+    state.page = page;
+    renderCurrentPage(); // clears any prior error banner too (fresh innerHTML)
+    if (corrected) setPageInUrl(page, { replace: true });
+    else if (pushUrl) setPageInUrl(page);
+    else if (replaceUrl) setPageInUrl(page, { replace: true });
   } catch (err) {
-    statusEl.textContent = `Could not load questions: ${err.message}`;
     console.error(err);
+    showPageError(`Could not load questions: ${err.message}`);
+  } finally {
+    listEl.classList.remove("is-loading");
   }
 }
 
-// ---- Render the full list ----
-function renderQuestions(questions) {
-  const first = questions[0];
-  metaEl.textContent = `${first.subject || "Physics"} · ${first.chapter || ""} · ${EXERCISE} · ${questions.length} questions`;
+// Shows an error without disturbing whatever is currently rendered (e.g. a failed
+// page-switch keeps the previous page's cards on screen instead of going blank).
+function showPageError(message) {
+  const existing = document.getElementById("page-error");
+  if (existing) existing.remove();
+  const p = document.createElement("p");
+  p.id = "page-error";
+  p.className = "status page-error";
+  p.textContent = message;
+  listEl.appendChild(p);
+}
 
-  listEl.innerHTML = ""; // clear the "Fetching..." status
+// ---- Initial load ----
+async function loadQuestions() {
+  await showPage(getPageFromUrl(), { replaceUrl: true }); // also normalizes a stale/out-of-range ?page=
+}
 
-  questions.forEach((q) => {
+// ---- Pagination (server-driven: each page is its own fetch, see fetchPage/showPage) ----
+function totalPages() {
+  return Math.max(1, Math.ceil(state.total / PAGE_SIZE));
+}
+
+function getPageFromUrl() {
+  const n = parseInt(new URLSearchParams(window.location.search).get("page"), 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+// Reflects the current page in the address bar so it can be shared/reloaded directly.
+// page 1 omits the param entirely, keeping the bare URL meaningful.
+function setPageInUrl(page, { replace = false } = {}) {
+  const url = new URL(window.location.href);
+  if (page > 1) url.searchParams.set("page", String(page));
+  else url.searchParams.delete("page");
+  history[replace ? "replaceState" : "pushState"]({ page }, "", url);
+}
+
+async function goToPage(page) {
+  const target = Math.min(Math.max(1, page), totalPages());
+  if (target === state.page) return;
+  await showPage(target, { pushUrl: true });
+  listEl.scrollIntoView({ block: "start" });
+}
+
+window.addEventListener("popstate", (e) => {
+  const page = (e.state && e.state.page) || getPageFromUrl();
+  showPage(Math.min(Math.max(1, page), totalPages()));
+});
+
+// Renders the current page's questions (already fetched into state.questions), plus the pager.
+function renderCurrentPage() {
+  listEl.innerHTML = ""; // clear the "Fetching..." status (or the previous page)
+
+  if (!state.questions.length) {
+    const p = document.createElement("p");
+    p.className = "status";
+    p.textContent = "No questions found for this exercise.";
+    listEl.appendChild(p);
+    return;
+  }
+
+  const first = state.questions[0];
+  metaEl.textContent = `${first.subject || "Physics"} · ${first.chapter || ""} · ${EXERCISE} · ${state.total} questions`;
+
+  state.questions.forEach((q) => {
     listEl.appendChild(renderQuestionCard(q));
   });
 
   renderMath(listEl);
+
+  if (totalPages() > 1) listEl.appendChild(buildPager());
+}
+
+// ---- Pager control (Prev / numbered pages, windowed once there are many / Next) ----
+function buildPager() {
+  const nav = document.createElement("nav");
+  nav.className = "pager";
+  nav.setAttribute("aria-label", "Pagination");
+
+  const pages = totalPages();
+  const current = state.page;
+
+  const addBtn = (label, page, opts = {}) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pager-btn";
+    btn.textContent = label;
+    if (opts.current) {
+      btn.classList.add("is-current");
+      btn.setAttribute("aria-current", "page");
+    }
+    btn.disabled = !!opts.disabled;
+    btn.addEventListener("click", () => goToPage(page));
+    nav.appendChild(btn);
+  };
+
+  const addEllipsis = () => {
+    const span = document.createElement("span");
+    span.className = "pager-ellipsis";
+    span.textContent = "…";
+    nav.appendChild(span);
+  };
+
+  addBtn("‹ Prev", current - 1, { disabled: current === 1 });
+
+  // Show every page number when there are few; otherwise window around the current page.
+  const numbers = [];
+  if (pages <= 7) {
+    for (let p = 1; p <= pages; p++) numbers.push(p);
+  } else {
+    const set = new Set([1, pages, current - 1, current, current + 1]);
+    numbers.push(...[...set].filter((p) => p >= 1 && p <= pages).sort((a, b) => a - b));
+  }
+  let prev = 0;
+  numbers.forEach((p) => {
+    if (p - prev > 1) addEllipsis();
+    addBtn(String(p), p, { current: p === current });
+    prev = p;
+  });
+
+  addBtn("Next ›", current + 1, { disabled: current === pages });
+
+  return nav;
 }
 
 function renderMath(scope) {
